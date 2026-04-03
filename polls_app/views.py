@@ -2,6 +2,7 @@ from django.db.models import F
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
+from django.utils import timezone
 from django.views import generic
 
 import logging
@@ -30,11 +31,21 @@ class IndexView(generic.ListView):
     context_object_name = "latest_question_list"
 
     def get_queryset(self):
-        return Question.objects.order_by("-pub_date")[:5]
+        """
+        Return the last five published questions (not including those set to be
+        published in the future).
+        """
+
+        no_future_questions = Question.objects.filter(pub_date__lte = timezone.now())
+        questions_ordered_pub_date = no_future_questions.order_by("-pub_date")
+        return questions_ordered_pub_date[:5]
     
 class DetailView(generic.DetailView):
-    model = Question
+    # model = Question
     template_name = "polls/detail.html"
+
+    def get_queryset(self):
+        return Question.objects.filter(pub_date__lte = timezone.now())
 
 class ResulstView(generic.DetailView):
     model = Question
